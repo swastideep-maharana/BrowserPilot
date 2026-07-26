@@ -1,9 +1,27 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-const isProtectedRoute = createRouteMatcher(['/test(.*)'])
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+])
+
+const isSessionTaskRoute = createRouteMatcher(['/session-tasks/(.*)'])
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  const { sessionStatus } = await auth()
+
+  // When "Membership Required" is enabled, a signed-in user with no org
+  // gets sessionStatus='pending'. Redirect them to choose-organization
+  // unless they're already on a session task page.
+  if (sessionStatus === 'pending' && !isSessionTaskRoute(req)) {
+    return NextResponse.redirect(
+      new URL('/session-tasks/choose-organization', req.url),
+    )
+  }
+
+  if (!isPublicRoute(req)) {
     await auth.protect()
   }
 })

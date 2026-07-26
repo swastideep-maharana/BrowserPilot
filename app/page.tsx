@@ -1,4 +1,4 @@
-import { SignIn, Show, UserButton } from "@clerk/nextjs"
+import { SignIn, Show, UserButton, OrganizationSwitcher } from "@clerk/nextjs"
 
 export default function Page() {
   return (
@@ -7,7 +7,15 @@ export default function Page() {
         <SignIn routing="hash" />
       </Show>
       <Show when="signed-in">
-        <UserButton showName />
+        <div className="flex flex-col items-center gap-4">
+          <UserButton showName />
+          <OrganizationSwitcher
+            hidePersonal
+            afterCreateOrganizationUrl="/"
+            afterSelectOrganizationUrl="/"
+            afterLeaveOrganizationUrl="/"
+          />
+        </div>
       </Show>
     </div>
   )
