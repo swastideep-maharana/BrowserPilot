@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background">
+    <div className="flex flex-1 items-center justify-center bg-background p-6">
       <Empty className="border-none max-w-md gap-6">
         <EmptyHeader>
           <EmptyMedia
