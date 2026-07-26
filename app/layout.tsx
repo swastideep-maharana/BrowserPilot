@@ -1,10 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google"
-import { ClerkProvider } from "@clerk/nextjs"
-import { shadcn } from "@clerk/ui/themes"
 
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/sonner"
+import { Providers } from "@/components/providers"
 import { cn } from "@/lib/utils"
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
@@ -25,16 +22,8 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}
     >
-      <body>
-        <ClerkProvider
-          appearance={{ theme: shadcn }}
-          taskUrls={{ "choose-organization": "/session-tasks/choose-organization" }}
-        >
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </ClerkProvider>
+      <body suppressHydrationWarning>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
