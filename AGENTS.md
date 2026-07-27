@@ -21,3 +21,9 @@ columns, narrow with 'Pick<Row, ... >' / Omit<Row, ... >' rather than redeclarin
 literal type. Don't add an insert type where 'db. insert( ... ).values()' already
 enforces the shape.
 You, 5 seconds ago . Uncommitted changes
+
+<!-- TRIGGER.DEV SKILLS START -->
+## Trigger.dev agent skills
+
+This project has Trigger.dev agent skills installed in `.agents/skills/`. Before writing or changing Trigger.dev code (background tasks, scheduled tasks, realtime, or chat.agent AI agents), load the most relevant skill: `trigger-authoring-tasks`, `trigger-chat-agent-advanced`, `trigger-cost-savings`, `trigger-getting-started`, `trigger-realtime-and-frontend`.
+<!-- TRIGGER.DEV SKILLS END -->
