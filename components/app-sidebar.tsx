@@ -1,5 +1,8 @@
+import { auth } from "@clerk/nextjs/server"
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 
+import { createWorkflowAction } from "@/features/workflows/actions"
+import { listWorkflows } from "@/features/workflows/data"
 import { WorkflowNav } from "@/features/workflows/components/workflow-nav"
 import {
   Sidebar,
@@ -10,7 +13,10 @@ import {
 } from "@/components/ui/sidebar"
 
 // ── AppSidebar ─────────────────────────────────────────────────────────────────
-export function AppSidebar() {
+export async function AppSidebar() {
+  const { orgId } = await auth()
+  const workflows = orgId ? await listWorkflows(orgId) : []
+
   return (
     <Sidebar collapsible="icon" variant="inset">
 
@@ -39,7 +45,7 @@ export function AppSidebar() {
 
       {/* ── Content ─────────────────────────────────────── */}
       <SidebarContent>
-        <WorkflowNav />
+        <WorkflowNav workflows={workflows} onCreateWorkflow={createWorkflowAction} />
       </SidebarContent>
 
       {/* ── Footer ──────────────────────────────────────── */}

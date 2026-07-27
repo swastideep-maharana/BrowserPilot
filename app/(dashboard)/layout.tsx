@@ -1,11 +1,14 @@
+import { auth } from "@clerk/nextjs/server"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  await auth.protect()
+
   return (
     <SidebarProvider className="h-svh overflow-hidden">
       <AppSidebar />
@@ -19,3 +22,4 @@ export default function DashboardLayout({
     </SidebarProvider>
   )
 }
+
