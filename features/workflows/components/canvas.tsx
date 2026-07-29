@@ -4,9 +4,6 @@ import {
   Controls,
   MiniMap,
   ReactFlow,
-  addEdge,
-  useEdgesState,
-  useNodesState,
   ConnectionLineType,
   NodeTypes,
 } from "@xyflow/react"
@@ -14,13 +11,17 @@ import {
 import { StepNode } from "@/features/workflows/components/step-node"
 import type { StepNodeType } from "@/features/workflows/nodes/node-registry"
 
-import { useCallback, useSyncExternalStore } from "react"
+import { useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
 
-import type { Connection, Edge, Node } from "@xyflow/react"
+import type { Edge } from "@xyflow/react"
 
 import "@xyflow/react/dist/style.css"
 
+import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow"
+import "@xyflow/react/dist/style.css";
+import "@liveblocks/react-ui/styles.css";
+import "@liveblocks/react-flow/styles.css";
 const nodeTypes: NodeTypes = { step: StepNode }
 
 // ── Initial graph ───────────────────────────────────────────────────────────────
@@ -52,13 +53,19 @@ function useIsMounted() {
 export function Canvas() {
   const mounted = useIsMounted()
   const { resolvedTheme } = useTheme()
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
-  )
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    onDelete,
+  } = useLiveblocksFlow({
+    suspense: true,
+    nodes: { initial: initialNodes },
+    edges: { initial: initialEdges },
+  })
 
   const colorMode = mounted && resolvedTheme === "dark" ? "dark" : "light"
 
@@ -70,6 +77,7 @@ export function Canvas() {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      onDelete={onDelete}
       fitView
       colorMode={colorMode}
       connectionLineType={ConnectionLineType.SmoothStep}
@@ -82,6 +90,7 @@ export function Canvas() {
     >
 
       <Controls />
+      <Cursors />
       <MiniMap />
     </ReactFlow>
   )
