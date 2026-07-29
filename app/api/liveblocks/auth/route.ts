@@ -19,6 +19,7 @@ export async function POST(request: Request) {
       // Map the active Clerk org to a Liveblocks group so that rooms whose
       // groupsAccesses include the orgId will be accessible to this user.
       groupIds: orgId ? [orgId] : [],
+      organizationId: orgId,
     },
     {
       userInfo: {

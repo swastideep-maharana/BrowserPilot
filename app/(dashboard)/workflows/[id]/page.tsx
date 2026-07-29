@@ -21,6 +21,7 @@ export default async function WorkflowPage({ params }: WorkflowPageProps) {
   // Ensure the Liveblocks room exists and is scoped to this org.
   // defaultAccesses: [] → private; only the org group has write access.
   await liveblocks.getOrCreateRoom(id, {
+    organizationId: orgId,
     defaultAccesses: [],
     groupsAccesses: {
       [orgId]: ["room:write"],
