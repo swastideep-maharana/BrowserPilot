@@ -6,11 +6,12 @@ import {
   ReactFlow,
   ConnectionLineType,
   NodeTypes,
+  Panel,
 } from "@xyflow/react"
 
 import { StepNode } from "@/features/workflows/components/step-node"
 import type { StepNodeType } from "@/features/workflows/nodes/node-registry"
-
+import { AvatarStack } from "@liveblocks/react-ui"
 import { useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
 
@@ -91,6 +92,9 @@ export function Canvas() {
 
       <Controls />
       <Cursors />
+      <Panel position="top-right">
+        <AvatarStack />
+      </Panel>
       <MiniMap />
     </ReactFlow>
   )
