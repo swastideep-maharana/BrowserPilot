@@ -1,8 +1,6 @@
 "use client"
 
 import {
-
-  BackgroundVariant,
   Controls,
   MiniMap,
   ReactFlow,
@@ -10,7 +8,12 @@ import {
   useEdgesState,
   useNodesState,
   ConnectionLineType,
+  NodeTypes,
 } from "@xyflow/react"
+
+import { StepNode } from "@/features/workflows/components/step-node"
+import type { StepNodeType } from "@/features/workflows/nodes/node-registry"
+
 import { useCallback, useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
 
@@ -18,31 +21,20 @@ import type { Connection, Edge, Node } from "@xyflow/react"
 
 import "@xyflow/react/dist/style.css"
 
+const nodeTypes: NodeTypes = { step: StepNode }
+
 // ── Initial graph ───────────────────────────────────────────────────────────────
-const initialNodes: Node[] = [
+
+const initialNodes: StepNodeType[] = [
   {
-    id: "1",
-    position: { x: 100, y: 120 },
-    data: { label: "Start" },
-    type: "input",
-  },
-  {
-    id: "2",
-    position: { x: 340, y: 120 },
-    data: { label: "Step" },
-  },
-  {
-    id: "3",
-    position: { x: 580, y: 120 },
-    data: { label: "End" },
-    type: "output",
+    id: "start",
+    type: "step",
+    position: { x: 0, y: 0 },
+    data: { type: "start", kind: "trigger", title: "Start", values: {} },
   },
 ]
 
-const initialEdges: Edge[] = [
-  { id: "e1-2", source: "1", target: "2" },
-  { id: "e2-3", source: "2", target: "3" },
-]
+const initialEdges: Edge[] = []
 
 // Returns false on the server and during hydration; true after first paint.
 // This keeps the server/client renders identical and avoids hydration mismatches.
@@ -72,6 +64,7 @@ export function Canvas() {
 
   return (
     <ReactFlow
+      nodeTypes={nodeTypes}
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
