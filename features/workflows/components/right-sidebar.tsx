@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { MoreHorizontal, Play, Trash2 } from "lucide-react"
+import { useReactFlow, useStore } from "@xyflow/react"
+import { toast } from "sonner"
 
 import {
   Accordion,
@@ -20,7 +22,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ResizablePanel } from "@/components/ui/resizable"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+
+import { deleteWorkflowAction } from "@/features/workflows/actions"
 
 import {
   nodeRegistry,
@@ -92,7 +97,18 @@ function FieldInput({
   value: string
   onChange: (value: string) => void
 }) {
-  // TODO: support a multiline field variant (textarea).
+  if (field.multiline) {
+    return (
+      <Textarea
+        id={field.key}
+        value={value}
+        placeholder={field.placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="min-h-[8rem] resize-y"
+      />
+    )
+  }
+
   return (
     <Input
       id={field.key}
@@ -105,6 +121,7 @@ function FieldInput({
 
 // The Editor tab: one input per field on the selected node, or an empty state.
 function Inspector({ node }: { node: StepNodeType | undefined }) {
+  const { updateNodeData } = useReactFlow<StepNodeType>()
   if (!node) {
     return (
       <Section title="Editor">
@@ -131,7 +148,9 @@ function Inspector({ node }: { node: StepNodeType | undefined }) {
                 field={field}
                 value={values[field.key] ?? ""}
                 onChange={(value) => {
-                  // TODO: save the edit back onto the selected node.
+                  updateNodeData(node.id, {
+                    values: { ...values, [field.key]: value },
+                  })
                   void value
                 }}
               />
@@ -158,9 +177,62 @@ const definitions = Object.values(nodeRegistry)
 
 // The Toolbar tab: a button per node type that adds it to the canvas.
 function Palette() {
+  const { addNodes, getNodes, getViewport } = useReactFlow()
+
   const add = (type: NodeType) => {
-    // TODO: add the clicked node to the canvas (one trigger max).
-    void type
+    const def = nodeRegistry[type]
+    const existingNodes = getNodes()
+
+    // ── Trigger guard: only one trigger node is allowed ─────────────────────
+    if (def.kind === "trigger") {
+      const hasTrigger = existingNodes.some((n) => {
+        const data = (n as StepNodeType).data
+        return data?.kind === "trigger"
+      })
+      if (hasTrigger) {
+        toast.error("Only one trigger node is allowed per workflow.", {
+          description: "Remove the existing trigger before adding another.",
+        })
+        return
+      }
+    }
+
+    // ── Number nodes of the same type (e.g. "Open URL 2") ───────────────────
+    const sameTypeCount = existingNodes.filter(
+      (n) => (n as StepNodeType).data?.type === type
+    ).length
+    const label =
+      sameTypeCount === 0
+        ? def.label
+        : `${def.label} ${sameTypeCount + 1}`
+
+    // ── Place in the centre of the current viewport ──────────────────────────
+    // getViewport() → { x, y, zoom } — these are the pan/zoom values.
+    // The canvas element fills its container; we need to convert from screen
+    // centre back to flow coordinates:
+    //   flowX = (screenX - panX) / zoom
+    // We use window dimensions as a proxy for the canvas centre.
+    const { x: panX, y: panY, zoom } = getViewport()
+    const canvasEl = document.querySelector(".react-flow") as HTMLElement | null
+    const rect = canvasEl?.getBoundingClientRect()
+    const canvasCx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const canvasCy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+    const flowX = (canvasCx - panX) / zoom
+    const flowY = (canvasCy - panY) / zoom
+
+    const newNode: StepNodeType = {
+      id: crypto.randomUUID(),
+      type: "step",
+      position: { x: flowX, y: flowY },
+      data: {
+        type,
+        kind: def.kind,
+        title: label,
+        values: {},
+      },
+    }
+
+    addNodes(newNode)
   }
 
   return (
@@ -206,11 +278,13 @@ function Palette() {
 // ---------------------------------------------------------------------------
 
 // The "..." menu for workflow-level actions.
-function ActionsMenu() {
+function ActionsMenu({ workflowId }: { workflowId: string }) {
+  const [isPending, startTransition] = useTransition()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost">
+        <Button size="icon" variant="ghost" disabled={isPending}>
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
@@ -218,8 +292,16 @@ function ActionsMenu() {
         <DropdownMenuItem
           variant="destructive"
           className="text-xs [&_svg:not([class*='size-'])]:size-3.5"
-          onSelect={() => {
-            // TODO: delete the workflow, then navigate away.
+          disabled={isPending}
+          onSelect={(e) => {
+            e.preventDefault()
+            startTransition(async () => {
+              try {
+                await deleteWorkflowAction(workflowId)
+              } catch (error) {
+                toast.error("Failed to delete workflow")
+              }
+            })
           }}
         >
           <Trash2 />
@@ -250,13 +332,22 @@ function RunButton() {
 // The sidebar itself — header on top, then the Toolbar / Editor tabs.
 // ---------------------------------------------------------------------------
 
-export function RightSidebar() {
+interface RightSidebarProps {
+  workflowId: string
+}
+
+export function RightSidebar({ workflowId: _workflowId }: RightSidebarProps) {
   const [tab, setTab] = useState("toolbar")
 
-  // TODO: read the currently selected node from React Flow.
-  const selected: StepNodeType | undefined = undefined
+  // Read the selected node from the shared React Flow store.
+  const selected = useStore((s) => s.nodes.find((n) => n.selected)) as StepNodeType | undefined
 
   // TODO: auto-switch to the Editor tab when the selection changes.
+  const [prevSelectedId, setPrevSelectedId] = useState(selected?.id)
+  if (selected && selected.id !== prevSelectedId) {
+    setPrevSelectedId(selected.id)
+    setTab("editor")
+  }
 
   return (
     <ResizablePanel
@@ -268,7 +359,7 @@ export function RightSidebar() {
     >
       <Tabs value={tab} onValueChange={setTab} className="size-full gap-0">
         <div className="flex items-center justify-between border-b border-border p-2">
-          <ActionsMenu />
+          <ActionsMenu workflowId={_workflowId} />
           <RunButton />
         </div>
         <TabsList className="m-2 w-fit bg-background">

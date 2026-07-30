@@ -3,6 +3,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import { ReactFlowProvider } from "@xyflow/react"
 import { WorkflowCanvas } from "@/features/workflows/components/workflow-canvas"
 import { RightSidebar } from "@/features/workflows/components/right-sidebar"
 
@@ -16,26 +17,30 @@ interface WorkflowShellProps {
 // react-resizable-panels v4: sizes are CSS strings — "Xrem" is interpreted as rem.
 export function WorkflowShell({ workflowId }: WorkflowShellProps) {
   return (
-    <ResizablePanelGroup
-      orientation="horizontal"
-      className="size-full"
-    >
-      {/* ── Left column ───────────────────────────────────── */}
-      <ResizablePanel minSize="30rem">
-        <WorkflowCanvas />
-      </ResizablePanel>
-
-      <ResizableHandle withHandle />
-
-      {/* ── Right inspector ───────────────────────────────── */}
-      <ResizablePanel
-        defaultSize="16rem"
-        minSize="14rem"
-        maxSize="36rem"
+    // ReactFlowProvider sits above both Canvas and RightSidebar so they share
+    // one React Flow store — required for useReactFlow() in the sidebar.
+    <ReactFlowProvider>
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="size-full"
       >
-        <RightSidebar workflowId={workflowId} />
-      </ResizablePanel>
+        {/* ── Left column ───────────────────────────────────── */}
+        <ResizablePanel minSize="30rem">
+          <WorkflowCanvas />
+        </ResizablePanel>
 
-    </ResizablePanelGroup>
+        <ResizableHandle withHandle />
+
+        {/* ── Right inspector ───────────────────────────────── */}
+        <ResizablePanel
+          defaultSize="16rem"
+          minSize="14rem"
+          maxSize="36rem"
+        >
+          <RightSidebar workflowId={workflowId} />
+        </ResizablePanel>
+
+      </ResizablePanelGroup>
+    </ReactFlowProvider>
   )
 }
