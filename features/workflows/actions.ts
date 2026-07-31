@@ -3,12 +3,13 @@
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-
+import { runs, Task } from "@trigger.dev/sdk"
 import { auth as triggerAuth, tasks } from "@trigger.dev/sdk"
 import type { helloWorldTask } from "@/trigger/example"
 
-import { createWorkflow, deleteWorkflow } from "@/features/workflows/data"
+import { createWorkflow, deleteWorkflow, saveWorkflowGraph } from "@/features/workflows/data"
 import { liveblocks } from "@/lib/liveblocks"
+import type { WorkflowGraph } from "@/lib/db/schema"
 
 export async function createWorkflowAction(name: string) {
   const { orgId } = await auth()
@@ -22,6 +23,16 @@ export async function createWorkflowAction(name: string) {
   revalidatePath("/", "layout")
 
   redirect(`/workflows/${workflow.id}`)
+}
+
+export async function saveWorkflowAction({ id, graph }: { id: string, graph: WorkflowGraph }) {
+  const { orgId } = await auth()
+
+  if (!orgId) {
+    throw new Error("No active organization. Please select an organization.")
+  }
+
+  return await saveWorkflowGraph({ orgId, id, graph })
 }
 
 export async function runWorkflowAction(workflowId: string) {
@@ -40,6 +51,12 @@ export async function runWorkflowAction(workflowId: string) {
   })
 
   return { runId: handle.id, publicAccessToken }
+}
+
+export async function cancelWorkflowRunAction(runId: string) {
+  const { orgId } = await auth()
+  if (!orgId) throw new Error("No active organization")
+  await runs.cancel(runId)
 }
 
 export async function deleteWorkflowAction(workflowId: string) {

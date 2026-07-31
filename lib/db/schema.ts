@@ -1,4 +1,10 @@
 import { jsonb, pgTable, serial, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import type { Edge } from '@xyflow/react'
+
+import type { StepNodeType } from '@/features/workflows/nodes/node-registry';
+
+export type WorkflowGraph = { nodes: StepNodeType[]; edges: Edge[] }
+
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
