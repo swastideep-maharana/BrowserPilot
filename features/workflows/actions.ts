@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { runs, Task } from "@trigger.dev/sdk"
 import { auth as triggerAuth, tasks } from "@trigger.dev/sdk"
 import type { helloWorldTask } from "@/trigger/example"
+import type { runWorkflowTask } from "@/features/workflows/tasks/run-workflow"
 
 import { createWorkflow, deleteWorkflow, saveWorkflowGraph } from "@/features/workflows/data"
 import { liveblocks } from "@/lib/liveblocks"
@@ -35,16 +36,18 @@ export async function saveWorkflowAction({ id, graph }: { id: string, graph: Wor
   return await saveWorkflowGraph({ orgId, id, graph })
 }
 
-export async function runWorkflowAction(workflowId: string) {
+export async function runWorkflowAction(id: string) {
   const { orgId } = await auth()
 
   if (!orgId) {
     throw new Error("No active organization. Please select an organization.")
   }
 
-  const handle = await tasks.trigger<typeof helloWorldTask>("hello-world", {
-    message: `Running workflow ${workflowId}`,
-  })
+  const handle = await tasks.trigger<typeof runWorkflowTask>(
+    "run-workflow",
+    { workflowId: id, orgId },
+    { tags: ['workflow:${id}'] }
+  );
 
   const publicAccessToken = await triggerAuth.createPublicToken({
     scopes: { read: { runs: [handle.id] } },
