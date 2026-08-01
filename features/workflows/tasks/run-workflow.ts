@@ -1,7 +1,9 @@
 import toposort from "toposort";
-import { logger, task } from "@trigger.dev/sdk";
+import { logger, retry, task } from "@trigger.dev/sdk";
 import type { Edge } from "@xyflow/react";
 
+import { Stagehand } from "@browserbasehq/stagehand";
+import { nodeExecutors } from "@/features/workflows/nodes/node-executors"
 import { getWorkflow } from "@/features/workflows/data";
 import type { WorkflowGraph } from "@/lib/db/schema";
 import type { StepNodeType } from "@/features/workflows/nodes/node-registry";
@@ -26,11 +28,35 @@ export const runWorkflowTask = task({
         ).filter((id) => connected.has(id))
 
         logger.info(`Workflow ${workflowId} order:`, { order })
-        for(const id of order) {
+
+        let stagehand: Stagehand | undefined
+        const getStagehand = async () => {
+            if (stagehand) return stagehand
+            stagehand = new Stagehand({
+                env: "BROWSERBASE",
+                apiKey: process.env.BROWSERBASE_API_KEY!,
+                model: "google/gemini-2.5-flash",
+
+                disablePino: true,
+            })
+            await stagehand.init()
+            return stagehand
+        }
+
+        for (const id of order) {
             const node = byId.get(id)!
             logger.info(`Running step: ${node.data.title}`)
             // TODO: actually execute the node instead of just logging it, and report
             // its progress so the UI can watch the run live.
+            const executor = nodeExecutors[node.data.type]
+            if (executor) await executor({
+                values: node.data.values,
+                getStagehand
+
+            })
         }
+        await stagehand?.close()
+
+        return { steps: order.length }
     }
 })
