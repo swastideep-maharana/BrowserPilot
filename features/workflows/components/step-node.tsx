@@ -1,15 +1,24 @@
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
+import { Loader2 } from "lucide-react"
+
 import {
     nodeRegistry,
     type StepNodeType,
 } from "@/features/workflows/nodes/node-registry"
 import { cn } from "@/lib/utils"
+import { useLatestRunSteps } from "@/features/workflows/components/workflow-runs-provider"
 
-function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
+function StepNodeComponent({ id, data, selected }: NodeProps<StepNodeType>) {
     const { type, kind, title, values } = data
     const def = nodeRegistry[type]
     const Icon = def.icon
+
+    const { steps, isLive } = useLatestRunSteps()
+    const stepStatus = steps?.find((s) => s.id === id)?.status
+
+    const isRunning = stepStatus === "running" && isLive
+    const isFailed = stepStatus === "failed"
 
     // Only render field rows for fields that have a non-empty value.
     const filledFields = def.fields.filter((field) => values[field.key])
@@ -20,8 +29,10 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
     return (
         <div
             className={cn(
-                "min-w-50 max-w-80 rounded-(--radius) border-2 border-border bg-card text-card-foreground",
-                selected && "ring-2 ring-ring ring-offset-2 ring-offset-background"
+                "min-w-50 max-w-80 rounded-(--radius) border-2 border-border bg-card text-card-foreground transition-colors",
+                selected && "ring-2 ring-ring ring-offset-2 ring-offset-background",
+                isRunning && "border-blue-500",
+                isFailed && "border-destructive"
             )}
         >
             {hasTarget && (
@@ -40,7 +51,11 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
                         def.accent
                     )}
                 >
-                    <Icon className="size-4" />
+                    {isRunning ? (
+                        <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                        <Icon className="size-4" />
+                    )}
                 </div>
                 <span className="text-sm font-semibold">{title}</span>
             </div>

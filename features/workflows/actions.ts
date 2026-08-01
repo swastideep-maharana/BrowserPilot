@@ -46,11 +46,11 @@ export async function runWorkflowAction(id: string) {
   const handle = await tasks.trigger<typeof runWorkflowTask>(
     "run-workflow",
     { workflowId: id, orgId },
-    { tags: ['workflow:${id}'] }
+    { tags: [`workflow:${id}`] }
   );
 
   const publicAccessToken = await triggerAuth.createPublicToken({
-    scopes: { read: { runs: [handle.id] } },
+    scopes: { read: { tags: [`workflow:${id}`] } },
   })
 
   return { runId: handle.id, publicAccessToken }
