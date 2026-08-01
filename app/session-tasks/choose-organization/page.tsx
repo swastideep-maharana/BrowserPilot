@@ -8,7 +8,7 @@ export const metadata = {
 export default function ChooseOrganizationPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
-      <TaskChooseOrganization redirectUrlComplete="/dashboard" />
+      <TaskChooseOrganization redirectUrlComplete="/" />
     </main>
   )
 }
