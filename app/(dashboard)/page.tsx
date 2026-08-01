@@ -1,3 +1,6 @@
+"use client"
+
+import { useTransition } from "react"
 import { Workflow, Plus } from "lucide-react"
 
 import {
@@ -9,8 +12,25 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Button } from "@/components/ui/button"
+import { createWorkflowAction } from "@/features/workflows/actions"
+import { generateSlug } from "@/features/workflows/lib/generate-slug"
+import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
 
 export default function Page() {
+  const [isPending, startTransition] = useTransition()
+  const { isPro, redirectToPricing } = useProPlan()
+
+  function handleCreate() {
+    if (!isPro) {
+      redirectToPricing()
+      return
+    }
+
+    startTransition(async () => {
+      await createWorkflowAction(generateSlug())
+    })
+  }
+
   return (
     <div className="flex flex-1 items-center justify-center bg-background p-6">
       <Empty className="border-none max-w-md gap-6">
@@ -35,12 +55,15 @@ export default function Page() {
             size="lg"
             variant="secondary"
             className="gap-2 px-8 py-6 text-base font-medium rounded-2xl h-auto"
+            disabled={isPending}
+            onClick={handleCreate}
           >
             <Plus className="size-5" />
-            New workflow
+            {isPending ? "Creating…" : "New workflow"}
           </Button>
         </EmptyContent>
       </Empty>
     </div>
   )
 }
+

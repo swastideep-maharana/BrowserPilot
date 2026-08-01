@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Lock, MoreHorizontal, Play, Trash2 } from "lucide-react"
+import { Lock, MoreHorizontal, Play, Square, Trash2 } from "lucide-react"
 import { useReactFlow, useStore } from "@xyflow/react"
 import { toast } from "sonner"
 
@@ -25,10 +25,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-import { deleteWorkflowAction, runWorkflowAction } from "@/features/workflows/actions"
+import {
+  cancelWorkflowRunAction,
+  deleteWorkflowAction,
+  runWorkflowAction,
+} from "@/features/workflows/actions"
 import { validateGraph } from "@/features/workflows/lib/validate-graph"
 import { useUpstreamConnections } from "@/features/workflows/hooks/use-upstream-connections"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
+import { useWorkflowRuns } from "@/features/workflows/components/workflow-runs-provider"
 
 import {
   nodeRegistry,
@@ -354,17 +359,50 @@ function ActionsMenu({ workflowId }: { workflowId: string }) {
   )
 }
 
-// Kicks off a run of the current workflow.
+// Kicks off a run of the current workflow or cancels an in-flight run.
 function RunButton({ workflowId }: { workflowId: string }) {
   const { getNodes, getEdges } = useReactFlow<StepNodeType>()
   const [isPending, startTransition] = useTransition()
+  const { runs, isLive } = useWorkflowRuns()
+
+  const liveRun = isLive
+    ? runs.find(
+        (r) =>
+          !["COMPLETED", "FAILED", "CANCELED", "SYSTEM_FAILURE", "CRASHED"].includes(
+            r.status
+          )
+      ) || runs[0]
+    : undefined
+
+  if (isLive && liveRun) {
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        disabled={isPending}
+        onClick={() => {
+          startTransition(async () => {
+            try {
+              await cancelWorkflowRunAction(liveRun.id)
+              toast.success("Workflow run stopped")
+            } catch (error) {
+              toast.error("Failed to stop workflow run")
+            }
+          })
+        }}
+      >
+        <Square fill="primary" />
+        Stop
+      </Button>
+    )
+  }
+
   return (
     <Button
       size="sm"
       variant="secondary"
       disabled={isPending}
       onClick={() => {
-        // TODO: validate the graph and run the workflow (toggle to Stop while running).
         const graph = { nodes: getNodes(), edges: getEdges() }
         const problems = validateGraph(graph)
         if (problems.length > 0) {
@@ -373,7 +411,11 @@ function RunButton({ workflowId }: { workflowId: string }) {
         }
 
         startTransition(async () => {
-          await runWorkflowAction(workflowId)
+          try {
+            await runWorkflowAction(workflowId)
+          } catch (error) {
+            toast.error("Failed to start workflow run")
+          }
         })
       }}
     >
