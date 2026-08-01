@@ -7,6 +7,7 @@ import { Plus, Workflow } from "lucide-react"
 
 import type { Workflow as WorkflowRow } from "@/lib/db/schema"
 import { generateSlug } from "@/features/workflows/lib/generate-slug"
+import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
 import {
   Popover,
   PopoverContent,
@@ -37,8 +38,14 @@ export function WorkflowNav({ workflows, onCreateWorkflow }: WorkflowNavProps) {
   const { state, isMobile } = useSidebar()
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
+  const { isPro, redirectToPricing } = useProPlan()
 
   function handleCreate() {
+    if (!isPro) {
+      redirectToPricing()
+      return
+    }
+
     startTransition(async () => {
       await onCreateWorkflow(generateSlug())
     })

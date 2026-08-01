@@ -1,0 +1,16 @@
+{
+  "billing": {
+    "organization_enabled": true,
+    "plans": {
+      "pro": {
+        "name": "Pro",
+        "payer_type": "org",
+        "amount": 2000,
+        "currency": "usd",
+        "description": "Pro plan for organizations",
+        "is_recurring": true,
+        "publicly_visible": true
+      }
+    }
+  }
+}

@@ -13,10 +13,14 @@ import { liveblocks } from "@/lib/liveblocks"
 import type { WorkflowGraph } from "@/lib/db/schema"
 
 export async function createWorkflowAction(name: string) {
-  const { orgId } = await auth()
+  const { orgId, has } = await auth()
 
   if (!orgId) {
     throw new Error("No active organization. Please select an organization.")
+  }
+
+  if (!has({ plan: "pro" }) && !has({ plan: "org:pro" })) {
+    throw new Error("Creating a workflow requires a Pro plan.")
   }
 
   const workflow = await createWorkflow(orgId, name)

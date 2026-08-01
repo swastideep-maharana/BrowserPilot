@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { MoreHorizontal, Play, Trash2 } from "lucide-react"
+import { Lock, MoreHorizontal, Play, Trash2 } from "lucide-react"
 import { useReactFlow, useStore } from "@xyflow/react"
 import { toast } from "sonner"
 
@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils"
 import { deleteWorkflowAction, runWorkflowAction } from "@/features/workflows/actions"
 import { validateGraph } from "@/features/workflows/lib/validate-graph"
 import { useUpstreamConnections } from "@/features/workflows/hooks/use-upstream-connections"
+import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
 
 import {
   nodeRegistry,
@@ -201,8 +202,14 @@ const definitions = Object.values(nodeRegistry)
 // The Toolbar tab: a button per node type that adds it to the canvas.
 function Palette() {
   const { addNodes, getNodes, getViewport } = useReactFlow()
+  const { isPro, redirectToPricing } = useProPlan()
 
   const add = (type: NodeType) => {
+    if (type === "agent" && !isPro) {
+      redirectToPricing()
+      return
+    }
+
     const def = nodeRegistry[type]
     const existingNodes = getNodes()
 
@@ -277,17 +284,29 @@ function Palette() {
             <AccordionContent className="flex flex-col gap-0.5">
               {definitions
                 .filter((def) => def.kind === section.kind)
-                .map((def) => (
-                  <Button
-                    key={def.type}
-                    variant="ghost"
-                    onClick={() => add(def.type as NodeType)}
-                    className="justify-start gap-2.5 px-1.5 text-xs"
-                  >
-                    <NodeIcon type={def.type as NodeType} />
-                    {def.label}
-                  </Button>
-                ))}
+                .map((def) => {
+                  const isLocked = def.type === "agent" && !isPro
+                  return (
+                    <Button
+                      key={def.type}
+                      variant="ghost"
+                      onClick={() => {
+                        if (isLocked) {
+                          redirectToPricing()
+                          return
+                        }
+                        add(def.type as NodeType)
+                      }}
+                      className="justify-start gap-2.5 px-1.5 text-xs w-full"
+                    >
+                      <NodeIcon type={def.type as NodeType} />
+                      <span className="flex-1 text-left">{def.label}</span>
+                      {isLocked && (
+                        <Lock className="size-3.5 text-muted-foreground" />
+                      )}
+                    </Button>
+                  )
+                })}
             </AccordionContent>
           </AccordionItem>
         ))}
