@@ -37,6 +37,7 @@ import {
   type StepNodeKind,
   type StepNodeType,
 } from "@/features/workflows/nodes/node-registry"
+import { NodeIcon } from "@/features/workflows/components/node-icon"
 
 // This file builds up to the RightSidebar component exported at the bottom: a
 // header with workflow actions (delete, run), then two tabs — a Toolbar for
@@ -46,23 +47,6 @@ import {
 // ---------------------------------------------------------------------------
 // Shared pieces — used by both the Toolbar and the Editor.
 // ---------------------------------------------------------------------------
-
-// The accent-colored icon chip, mirroring the node on the canvas.
-function NodeIcon({ type, className }: { type: NodeType; className?: string }) {
-  const def = nodeRegistry[type]
-  const Icon = def.icon
-  return (
-    <span
-      className={cn(
-        "flex size-6 shrink-0 items-center justify-center rounded-md",
-        def.accent,
-        className
-      )}
-    >
-      <Icon className="size-3.5" />
-    </span>
-  )
-}
 
 // A titled, scrollable panel. Each tab renders its content inside one.
 function Section({

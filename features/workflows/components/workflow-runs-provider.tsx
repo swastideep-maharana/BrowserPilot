@@ -66,3 +66,14 @@ export function useLatestRunSteps() {
     isLive: context.isLive,
   }
 }
+
+export function useWorkflowRuns() {
+  const context = React.useContext(WorkflowRunsContext)
+  if (!context) {
+    throw new Error("useWorkflowRuns must be used within a WorkflowRunsProvider")
+  }
+  return {
+    runs: context.runs,
+    isLive: context.isLive,
+  }
+}

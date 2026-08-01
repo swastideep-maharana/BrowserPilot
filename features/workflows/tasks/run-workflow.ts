@@ -7,11 +7,16 @@ import { interpolate } from "@/features/workflows/lib/interpolate";
 import { nodeExecutors } from "@/features/workflows/nodes/node-executors"
 import { getWorkflow } from "@/features/workflows/data";
 import type { WorkflowGraph } from "@/lib/db/schema";
-import type { StepNodeType } from "@/features/workflows/nodes/node-registry";
+import type { NodeType } from "@/features/workflows/nodes/node-registry";
 
 export type RunStep = {
     id: string;
+    type: string;
+    title: string;
     status: "pending" | "running" | "done" | "failed";
+    durationMs?: number;
+    output?: any;
+    error?: string;
 }
 
 export const runWorkflowTask = task({
@@ -50,20 +55,30 @@ export const runWorkflowTask = task({
             return stagehand
         }
 
-        const steps: RunStep[] = order.map((id) => ({ id, status: "pending" }))
+        const steps: RunStep[] = order.map((id) => {
+            const node = byId.get(id)!
+            return {
+                id,
+                type: node.data.type as string,
+                title: (node.data.title as string) || (node.data.type as string),
+                status: "pending"
+            }
+        })
         metadata.set("steps", steps)
 
         const outputs: Record<string, any> = {}
 
         for (const id of order) {
             const node = byId.get(id)!
-            logger.info(`Running step: ${node.data.title}`)
+            logger.info(`Running step: ${node.data.title || node.data.type}`)
             // TODO: actually execute the node instead of just logging it, and report
             // its progress so the UI can watch the run live.
-            const executor = nodeExecutors[node.data.type]
+            const executor = nodeExecutors[node.data.type as NodeType]
+            const step = steps.find((s) => s.id === id)!
+            
             if (executor) {
-                const step = steps.find((s) => s.id === id)!
                 step.status = "running"
+                const startTime = Date.now()
                 metadata.set("steps", steps)
                 await metadata.flush()
 
@@ -81,13 +96,21 @@ export const runWorkflowTask = task({
                     })
                     
                     step.status = "done"
+                    step.output = outputs[id]
+                    step.durationMs = Date.now() - startTime
                     metadata.set("steps", steps)
                 } catch (error) {
                     step.status = "failed"
+                    step.error = error instanceof Error ? error.message : String(error)
+                    step.durationMs = Date.now() - startTime
                     metadata.set("steps", steps)
                     await metadata.flush()
                     throw error
                 }
+            } else {
+                step.status = "done"
+                metadata.set("steps", steps)
+                await metadata.flush()
             }
         }
         await stagehand?.close()

@@ -6,6 +6,7 @@ import {
 import { ReactFlowProvider } from "@xyflow/react"
 import { WorkflowCanvas } from "@/features/workflows/components/workflow-canvas"
 import { RightSidebar } from "@/features/workflows/components/right-sidebar"
+import { ConsolePanel } from "@/features/workflows/components/console-panel"
 
 interface WorkflowShellProps {
   workflowId: string
@@ -26,7 +27,20 @@ export function WorkflowShell({ workflowId }: WorkflowShellProps) {
       >
         {/* ── Left column ───────────────────────────────────── */}
         <ResizablePanel minSize="30rem">
-          <WorkflowCanvas />
+          <ResizablePanelGroup orientation="vertical">
+            <ResizablePanel minSize="10rem">
+              <WorkflowCanvas />
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            <ResizablePanel
+              defaultSize="16rem"
+              minSize="5rem"
+            >
+              <ConsolePanel />
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
