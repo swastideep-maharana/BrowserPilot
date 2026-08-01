@@ -115,6 +115,9 @@ export const runWorkflowTask = task({
         }
         await stagehand?.close()
 
-        return { steps }
+        return { 
+            steps,
+            sessionId: stagehand?.browserbaseSessionID
+        }
     }
 })

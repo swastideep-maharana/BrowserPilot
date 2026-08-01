@@ -30,7 +30,14 @@ export function WorkflowRunsProvider({
     }
   )
 
-  const latestRun = runs?.[0]
+  const processedRuns = React.useMemo(() => {
+    return runs.map((run) => ({
+      ...run,
+      sessionId: run.output?.sessionId as string | undefined,
+    }))
+  }, [runs])
+
+  const latestRun = processedRuns?.[0]
   
   // "Live" means the run is queued or executing (any state before completion)
   const isLive = latestRun ? !["COMPLETED", "FAILED", "CANCELED", "SYSTEM_FAILURE", "CRASHED"].includes(latestRun.status) : false
@@ -42,11 +49,11 @@ export function WorkflowRunsProvider({
 
   const value = React.useMemo(
     () => ({
-      runs,
+      runs: processedRuns,
       isLive,
       latestSteps,
     }),
-    [runs, isLive, latestSteps]
+    [processedRuns, isLive, latestSteps]
   )
 
   return (

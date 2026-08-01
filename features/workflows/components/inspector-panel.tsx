@@ -6,10 +6,21 @@ import type { NodeType } from "@/features/workflows/nodes/node-registry"
 import type { RunStep } from "@/features/workflows/tasks/run-workflow"
 import prettyMilliseconds from "pretty-ms"
 import { cn } from "@/lib/utils"
+import type { ConsoleSelection } from "@/features/workflows/components/console-panel"
+import { SessionReplay } from "@/features/workflows/components/session-replay"
 
-export function InspectorPanel({ stepId }: { stepId: string }) {
+export function InspectorPanel({ selection }: { selection: NonNullable<ConsoleSelection> }) {
   const { runs } = useWorkflowRuns()
 
+  if (selection.type === "replay") {
+    return (
+      <div className="flex h-full flex-col">
+        <SessionReplay sessionId={selection.sessionId} />
+      </div>
+    )
+  }
+
+  const stepId = selection.stepId
   let selectedStep: RunStep | null = null
   for (const run of runs ?? []) {
     const steps = (run.output?.steps ?? run.metadata?.steps ?? []) as RunStep[]
