@@ -3,6 +3,7 @@ import { logger, retry, task } from "@trigger.dev/sdk";
 import type { Edge } from "@xyflow/react";
 
 import { Stagehand } from "@browserbasehq/stagehand";
+import { interpolate } from "@/features/workflows/lib/interpolate";
 import { nodeExecutors } from "@/features/workflows/nodes/node-executors"
 import { getWorkflow } from "@/features/workflows/data";
 import type { WorkflowGraph } from "@/lib/db/schema";
@@ -43,17 +44,27 @@ export const runWorkflowTask = task({
             return stagehand
         }
 
+        const outputs: Record<string, any> = {}
+
         for (const id of order) {
             const node = byId.get(id)!
             logger.info(`Running step: ${node.data.title}`)
             // TODO: actually execute the node instead of just logging it, and report
             // its progress so the UI can watch the run live.
             const executor = nodeExecutors[node.data.type]
-            if (executor) await executor({
-                values: node.data.values,
-                getStagehand
+            if (executor) {
+                const interpolatedValues = Object.fromEntries(
+                    Object.entries(node.data.values || {}).map(([key, val]) => [
+                        key,
+                        typeof val === "string" ? interpolate(val, outputs) : val,
+                    ])
+                )
 
-            })
+                outputs[id] = await executor({
+                    values: interpolatedValues as Record<string, string>,
+                    getStagehand
+                })
+            }
         }
         await stagehand?.close()
 
