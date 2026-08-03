@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Lock, MoreHorizontal, Play, Square, Trash2 } from "lucide-react"
+import { BookOpen, Lock, MoreHorizontal, Play, Square, Trash2 } from "lucide-react"
 import { useReactFlow, useStore } from "@xyflow/react"
 import { toast } from "sonner"
 
@@ -33,6 +33,7 @@ import { validateGraph } from "@/features/workflows/lib/validate-graph"
 import { useUpstreamConnections } from "@/features/workflows/hooks/use-upstream-connections"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
 import { useWorkflowRuns } from "@/features/workflows/components/workflow-runs-provider"
+import { HowItWorksDialog } from "@/features/workflows/components/how-it-works-dialog"
 
 import {
   nodeRegistry,
@@ -449,7 +450,21 @@ export function RightSidebar({ workflowId: _workflowId }: RightSidebarProps) {
     <div className="flex h-full w-full flex-col bg-background">
       <Tabs value={tab} onValueChange={setTab} className="size-full gap-0">
         <div className="flex items-center justify-between border-b border-border p-2">
-          <ActionsMenu workflowId={_workflowId} />
+          <div className="flex items-center gap-1">
+            <ActionsMenu workflowId={_workflowId} />
+            <HowItWorksDialog
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-8 text-muted-foreground hover:text-foreground"
+                  title="Workflow Guide & Documentation"
+                >
+                  <BookOpen className="size-4" />
+                </Button>
+              }
+            />
+          </div>
           <RunButton workflowId={_workflowId} />
         </div>
         <TabsList className="m-2 w-fit bg-background">

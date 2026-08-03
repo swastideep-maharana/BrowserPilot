@@ -4,6 +4,7 @@ import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 import { createWorkflowAction } from "@/features/workflows/actions"
 import { listWorkflows } from "@/features/workflows/data"
 import { WorkflowNav } from "@/features/workflows/components/workflow-nav"
+import { SidebarGuideButton } from "@/components/sidebar-guide-button"
 import {
   Sidebar,
   SidebarContent,
@@ -49,8 +50,11 @@ export async function AppSidebar() {
       </SidebarContent>
 
       {/* ── Footer ──────────────────────────────────────── */}
-      <SidebarFooter className="h-14 flex-row items-center px-3">
-        <UserButton />
+      <SidebarFooter className="flex-col gap-2 p-2">
+        <SidebarGuideButton />
+        <div className="flex h-10 items-center justify-between px-1">
+          <UserButton />
+        </div>
       </SidebarFooter>
 
     </Sidebar>
