@@ -9,7 +9,14 @@ export function useProPlan() {
   const router = useRouter()
 
   const isPro = Boolean(
-    isLoaded && orgId && (has?.({ plan: "pro" }) || has?.({ plan: "org:pro" }))
+    isLoaded &&
+      orgId &&
+      (has?.({ plan: "pro" }) ||
+        has?.({ plan: "org:pro" }) ||
+        has?.({ plan: "starter" }) ||
+        has?.({ plan: "team" }) ||
+        has?.({ plan: "pro_monthly" }) ||
+        has?.({ plan: "pro_yearly" }))
   )
 
   const redirectToPricing = useCallback(() => {

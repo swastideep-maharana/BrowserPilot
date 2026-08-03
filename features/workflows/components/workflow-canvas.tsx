@@ -1,3 +1,5 @@
+"use client"
+
 import { Canvas } from "@/features/workflows/components/canvas"
 
 // ── WorkflowCanvas ─────────────────────────────────────────────────────────────

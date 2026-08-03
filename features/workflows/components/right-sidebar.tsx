@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { BookOpen, Lock, MoreHorizontal, Play, Square, Trash2 } from "lucide-react"
 import { useReactFlow, useStore } from "@xyflow/react"
 import { toast } from "sonner"
@@ -327,6 +328,7 @@ function Palette() {
 // The "..." menu for workflow-level actions.
 function ActionsMenu({ workflowId }: { workflowId: string }) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   return (
     <DropdownMenu>
@@ -344,8 +346,15 @@ function ActionsMenu({ workflowId }: { workflowId: string }) {
             e.preventDefault()
             startTransition(async () => {
               try {
-                await deleteWorkflowAction(workflowId)
+                const res = await deleteWorkflowAction(workflowId)
+                if (res?.success) {
+                  toast.success("Workflow deleted")
+                  router.push("/")
+                } else {
+                  toast.error(res?.error || "Failed to delete workflow")
+                }
               } catch (error) {
+                console.error("Failed to delete workflow:", error)
                 toast.error("Failed to delete workflow")
               }
             })

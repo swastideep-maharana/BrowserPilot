@@ -21,35 +21,40 @@ export default async function WorkflowPage({ params }: WorkflowPageProps) {
   if (!workflow) notFound()
 
   // Ensure the Liveblocks room exists and is scoped to this org.
-  // defaultAccesses: [] → private; only the org group has write access.
-  const room = await liveblocks.getOrCreateRoom(id, {
-    organizationId: orgId,
-    defaultAccesses: [],
-    groupsAccesses: {
-      [orgId]: ["room:write"],
-    },
-    metadata: {
-      title: workflow.name,
-    },
-  })
-
-  // getOrCreateRoom does not update existing rooms. We update it here 
-  // to ensure legacy/existing rooms have their accesses synchronized,
-  // but we only do it if the permission is actually missing to save an API call.
-  const hasWriteAccess = room.groupsAccesses?.[orgId]?.includes("room:write")
-  if (!hasWriteAccess) {
-    await liveblocks.updateRoom(id, {
+  try {
+    const room = await liveblocks.getOrCreateRoom(id, {
+      organizationId: orgId,
       defaultAccesses: [],
       groupsAccesses: {
         [orgId]: ["room:write"],
       },
+      metadata: {
+        title: workflow.name,
+      },
     })
+
+    const hasWriteAccess = room.groupsAccesses?.[orgId]?.includes("room:write")
+    if (!hasWriteAccess) {
+      await liveblocks.updateRoom(id, {
+        defaultAccesses: [],
+        groupsAccesses: {
+          [orgId]: ["room:write"],
+        },
+      })
+    }
+  } catch (liveblocksError) {
+    console.error("Liveblocks room initialization error:", liveblocksError)
   }
 
-  const publicAccessToken = await triggerAuth.createPublicToken({
-    scopes: { read: { tags: [`workflow:${id}`] } },
-    expirationTime: "1h",
-  })
+  let publicAccessToken: string | undefined = undefined
+  try {
+    publicAccessToken = await triggerAuth.createPublicToken({
+      scopes: { read: { tags: [`workflow:${id}`] } },
+      expirationTime: "1h",
+    })
+  } catch (triggerError) {
+    console.error("Trigger.dev public token generation error:", triggerError)
+  }
 
   return (
     <Room roomId={id}>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import {
   Workflow,
   Plus,
@@ -27,6 +28,7 @@ import {
 
 export default function Page() {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
   const { isPro, redirectToPricing } = useProPlan()
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideTab, setGuideTab] = useState("get-started")
@@ -39,11 +41,16 @@ export default function Page() {
 
     startTransition(async () => {
       try {
-        await createWorkflowAction(name || generateSlug())
-      } catch (error) {
-        if ((error as any)?.digest?.startsWith("NEXT_REDIRECT")) {
-          throw error
+        const res = await createWorkflowAction(name || generateSlug())
+        if (res?.success) {
+          router.push(`/workflows/${res.workflowId}`)
+        } else if (res?.redirectTo) {
+          router.push(res.redirectTo)
+        } else if (res && !res.success) {
+          toast.error(res.error || "Failed to create workflow")
         }
+      } catch (error) {
+        console.error("Error creating workflow:", error)
         toast.error("Failed to create workflow")
       }
     })

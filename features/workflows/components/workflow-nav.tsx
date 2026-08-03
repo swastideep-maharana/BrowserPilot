@@ -2,13 +2,14 @@
 
 import { useTransition } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Plus, Workflow } from "lucide-react"
 
 import { toast } from "sonner"
 import type { Workflow as WorkflowRow } from "@/lib/db/schema"
 import { generateSlug } from "@/features/workflows/lib/generate-slug"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
+import type { CreateWorkflowResult } from "@/features/workflows/actions"
 import {
   Popover,
   PopoverContent,
@@ -27,7 +28,7 @@ import {
 
 interface WorkflowNavProps {
   workflows: WorkflowRow[]
-  onCreateWorkflow: (name: string) => Promise<void>
+  onCreateWorkflow: (name: string) => Promise<CreateWorkflowResult>
 }
 
 // ── WorkflowNav ────────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ export function WorkflowNav({ workflows, onCreateWorkflow }: WorkflowNavProps) {
   const { state, isMobile } = useSidebar()
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
+  const router = useRouter()
   const { isPro, redirectToPricing } = useProPlan()
 
   function handleCreate() {
@@ -49,11 +51,16 @@ export function WorkflowNav({ workflows, onCreateWorkflow }: WorkflowNavProps) {
 
     startTransition(async () => {
       try {
-        await onCreateWorkflow(generateSlug())
-      } catch (error) {
-        if ((error as any)?.digest?.startsWith("NEXT_REDIRECT")) {
-          throw error
+        const res = await onCreateWorkflow(generateSlug())
+        if (res?.success) {
+          router.push(`/workflows/${res.workflowId}`)
+        } else if (res?.redirectTo) {
+          router.push(res.redirectTo)
+        } else if (res && !res.success) {
+          toast.error(res.error || "Failed to create workflow")
         }
+      } catch (error) {
+        console.error("Error creating workflow:", error)
         toast.error("Failed to create workflow")
       }
     })
