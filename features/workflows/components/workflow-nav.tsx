@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Plus, Workflow } from "lucide-react"
 
+import { toast } from "sonner"
 import type { Workflow as WorkflowRow } from "@/lib/db/schema"
 import { generateSlug } from "@/features/workflows/lib/generate-slug"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
@@ -47,7 +48,14 @@ export function WorkflowNav({ workflows, onCreateWorkflow }: WorkflowNavProps) {
     }
 
     startTransition(async () => {
-      await onCreateWorkflow(generateSlug())
+      try {
+        await onCreateWorkflow(generateSlug())
+      } catch (error) {
+        if ((error as any)?.digest?.startsWith("NEXT_REDIRECT")) {
+          throw error
+        }
+        toast.error("Failed to create workflow")
+      }
     })
   }
 

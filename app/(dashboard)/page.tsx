@@ -12,6 +12,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { createWorkflowAction } from "@/features/workflows/actions"
 import { generateSlug } from "@/features/workflows/lib/generate-slug"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
@@ -27,7 +28,15 @@ export default function Page() {
     }
 
     startTransition(async () => {
-      await createWorkflowAction(generateSlug())
+      try {
+        await createWorkflowAction(generateSlug())
+      } catch (error) {
+        // Next.js redirect throws NEXT_REDIRECT which should not be caught as an error
+        if ((error as any)?.digest?.startsWith("NEXT_REDIRECT")) {
+          throw error
+        }
+        toast.error("Failed to create workflow")
+      }
     })
   }
 

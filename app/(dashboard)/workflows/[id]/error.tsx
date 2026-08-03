@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/empty"
 import { Button } from "@/components/ui/button"
 
+import Link from "next/link"
+
 interface WorkflowErrorProps {
   error: Error & { digest?: string }
   reset: () => void
@@ -35,14 +37,22 @@ export default function WorkflowError({ error, reset }: WorkflowErrorProps) {
             {error.message || "An unexpected error occurred while loading this workflow."}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
+        <EmptyContent className="flex gap-3">
           <Button
             size="lg"
             variant="secondary"
-            className="gap-2 px-8 py-6 text-base font-medium rounded-2xl h-auto"
+            className="gap-2 px-6 py-5 text-sm font-medium rounded-xl h-auto"
             onClick={reset}
           >
             Try again
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            asChild
+            className="gap-2 px-6 py-5 text-sm font-medium rounded-xl h-auto"
+          >
+            <Link href="/">Back to Dashboard</Link>
           </Button>
         </EmptyContent>
       </Empty>

@@ -16,11 +16,11 @@ export async function createWorkflowAction(name: string) {
   const { orgId, has } = await auth()
 
   if (!orgId) {
-    throw new Error("No active organization. Please select an organization.")
+    redirect("/session-tasks/choose-organization")
   }
 
   if (!has({ plan: "pro" }) && !has({ plan: "org:pro" })) {
-    throw new Error("Creating a workflow requires a Pro plan.")
+    redirect("/pricing")
   }
 
   const workflow = await createWorkflow(orgId, name)
