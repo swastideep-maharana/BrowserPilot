@@ -134,4 +134,65 @@
   [role="button"]:not(:disabled) {
     cursor: pointer !important;
   }
+
+  /* Sleek modern scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+  }
 }
+
+/* ==========================================================================
+   Third-Party Watermarks, Badges & Branding Suppressors
+   ========================================================================== */
+a[href*="liveblocks"],
+a[href*="liveblocks.io"],
+a[href*="liveblocks.com"],
+div:has(> a[href*="liveblocks"]),
+div:has(> a[href*="liveblocks.io"]),
+[class*="lb-branding"],
+[class*="lb-badge"],
+[class*="lb-watermark"],
+[class*="lb-attribution"],
+[class*="liveblocks-branding"],
+[class*="liveblocks-badge"],
+[class*="liveblocks-watermark"],
+[class*="liveblocks-attribution"],
+[data-liveblocks-badge],
+[data-liveblocks-branding],
+[data-liveblocks-watermark],
+[data-liveblocks-attribution],
+[data-liveblocks-badge-container],
+[aria-label*="liveblocks" i],
+[title*="liveblocks" i],
+[alt*="liveblocks" i],
+.react-flow__attribution,
+.cl-developmentBadge,
+[data-clerk-element="developmentBadge"],
+.cl-internal-phfxk3,
+.cl-internal-b3fm6y,
+.cl-internal-1dauvpw,
+.cl-footerPages,
+.cl-footer > div:last-child:has(a[href*="clerk"]),
+.cl-card > div:last-child:has(a[href*="clerk"]),
+a[href*="clerk.com"],
+a[href*="clerk.dev"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+

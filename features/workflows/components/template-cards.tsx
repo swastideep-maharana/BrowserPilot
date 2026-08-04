@@ -1,57 +1,14 @@
 "use client"
 
-import { Globe, Bot, Search, Sparkles, ArrowRight, Mail } from "lucide-react"
+import { ArrowRight, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  WORKFLOW_TEMPLATES,
+  type WorkflowTemplate,
+} from "@/features/workflows/data/templates"
 
-export interface WorkflowTemplate {
-  id: string
-  title: string
-  description: string
-  tag: string
-  icon: React.ComponentType<{ className?: string }>
-  iconBg: string
-  steps: string[]
-}
-
-export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
-  {
-    id: "ecom-price-tracker",
-    title: "E-Commerce Price Tracker",
-    description: "Navigate to an online store, extract the current product price and stock, and send an email alert.",
-    tag: "Scraping",
-    icon: Search,
-    iconBg: "bg-amber-500 text-white",
-    steps: ["Start", "Open URL", "Extract Price", "Send Email"],
-  },
-  {
-    id: "ai-web-researcher",
-    title: "Autonomous Web Researcher",
-    description: "Deploy an AI Agent to autonomously browse, search multiple sources, and summarize research findings.",
-    tag: "AI Agent",
-    icon: Bot,
-    iconBg: "bg-indigo-500 text-white",
-    steps: ["Start", "Open URL", "AI Agent (CUA)", "Send Email"],
-  },
-  {
-    id: "auto-login-fill",
-    title: "Automated Login & Interaction",
-    description: "Fill login credentials using natural language Act instructions and capture dashboard verification.",
-    tag: "Automation",
-    icon: Sparkles,
-    iconBg: "bg-purple-500 text-white",
-    steps: ["Start", "Open URL", "Act (Type Input)", "Act (Click Submit)"],
-  },
-  {
-    id: "daily-digest-reporter",
-    title: "Web Headline Digest",
-    description: "Scrape top headlines or trending repositories and email a structured morning briefing.",
-    tag: "Reporting",
-    icon: Globe,
-    iconBg: "bg-emerald-500 text-white",
-    steps: ["Start", "Open URL", "Extract Headlines", "Send Email"],
-  },
-]
+export { WORKFLOW_TEMPLATES, type WorkflowTemplate }
 
 interface TemplateCardsProps {
   onSelectTemplate?: (template: WorkflowTemplate) => void
@@ -76,7 +33,7 @@ export function TemplateCards({ onSelectTemplate, onOpenGuide }: TemplateCardsPr
                   >
                     <Icon className="size-4" />
                   </span>
-                  <h4 className="font-semibold text-sm group-hover:text-primary transition-colors">
+                  <h4 className="font-semibold text-sm group-hover:text-primary transition-colors text-foreground">
                     {tmpl.title}
                   </h4>
                 </div>
@@ -102,23 +59,23 @@ export function TemplateCards({ onSelectTemplate, onOpenGuide }: TemplateCardsPr
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
+            <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 text-xs text-muted-foreground hover:text-foreground px-2"
                 onClick={() => onOpenGuide?.("recipes")}
               >
-                View Blueprint
+                Inspect Recipe
               </Button>
+
               <Button
-                variant="secondary"
                 size="sm"
-                className="h-7 gap-1 text-xs font-medium group-hover:bg-primary group-hover:text-primary-foreground transition-colors px-3"
+                className="h-7 gap-1 text-xs font-medium"
                 onClick={() => onSelectTemplate?.(tmpl)}
               >
-                <span>Use template</span>
-                <ArrowRight className="size-3" />
+                <Sparkles className="size-3" />
+                <span>Use Template</span>
               </Button>
             </div>
           </div>

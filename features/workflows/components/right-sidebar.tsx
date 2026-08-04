@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
-import { BookOpen, Lock, MoreHorizontal, Play, Square, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { Lock } from "lucide-react"
 import { useReactFlow, useStore } from "@xyflow/react"
 import { toast } from "sonner"
 
@@ -13,28 +12,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-import {
-  cancelWorkflowRunAction,
-  deleteWorkflowAction,
-  runWorkflowAction,
-} from "@/features/workflows/actions"
-import { validateGraph } from "@/features/workflows/lib/validate-graph"
 import { useUpstreamConnections } from "@/features/workflows/hooks/use-upstream-connections"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
-import { useWorkflowRuns } from "@/features/workflows/components/workflow-runs-provider"
-import { HowItWorksDialog } from "@/features/workflows/components/how-it-works-dialog"
 
 import {
   nodeRegistry,
@@ -207,7 +192,7 @@ const definitions = Object.values(nodeRegistry)
 
 // The Toolbar tab: a button per node type that adds it to the canvas.
 function Palette() {
-  const { addNodes, getNodes, getViewport } = useReactFlow()
+  const { addNodes, getNodes, getViewport } = useReactFlow<StepNodeType>()
   const { isPro, redirectToPricing } = useProPlan()
 
   const add = (type: NodeType) => {
@@ -322,124 +307,11 @@ function Palette() {
 }
 
 // ---------------------------------------------------------------------------
-// Header — workflow-level actions shown above the tabs.
-// ---------------------------------------------------------------------------
-
-// The "..." menu for workflow-level actions.
-function ActionsMenu({ workflowId }: { workflowId: string }) {
-  const [isPending, startTransition] = useTransition()
-  const router = useRouter()
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost" disabled={isPending}>
-          <MoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-48">
-        <DropdownMenuItem
-          variant="destructive"
-          className="text-xs [&_svg:not([class*='size-'])]:size-3.5"
-          disabled={isPending}
-          onSelect={(e) => {
-            e.preventDefault()
-            startTransition(async () => {
-              try {
-                const res = await deleteWorkflowAction(workflowId)
-                if (res?.success) {
-                  toast.success("Workflow deleted")
-                  router.push("/")
-                } else {
-                  toast.error(res?.error || "Failed to delete workflow")
-                }
-              } catch (error) {
-                console.error("Failed to delete workflow:", error)
-                toast.error("Failed to delete workflow")
-              }
-            })
-          }}
-        >
-          <Trash2 />
-          Delete workflow
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-// Kicks off a run of the current workflow or cancels an in-flight run.
-function RunButton({ workflowId }: { workflowId: string }) {
-  const { getNodes, getEdges } = useReactFlow<StepNodeType>()
-  const [isPending, startTransition] = useTransition()
-  const { runs, isLive } = useWorkflowRuns()
-
-  const liveRun = isLive
-    ? runs.find(
-        (r) =>
-          !["COMPLETED", "FAILED", "CANCELED", "SYSTEM_FAILURE", "CRASHED"].includes(
-            r.status
-          )
-      ) || runs[0]
-    : undefined
-
-  if (isLive && liveRun) {
-    return (
-      <Button
-        size="sm"
-        variant="secondary"
-        disabled={isPending}
-        onClick={() => {
-          startTransition(async () => {
-            try {
-              await cancelWorkflowRunAction(liveRun.id)
-              toast.success("Workflow run stopped")
-            } catch (error) {
-              toast.error("Failed to stop workflow run")
-            }
-          })
-        }}
-      >
-        <Square fill="primary" />
-        Stop
-      </Button>
-    )
-  }
-
-  return (
-    <Button
-      size="sm"
-      variant="secondary"
-      disabled={isPending}
-      onClick={() => {
-        const graph = { nodes: getNodes(), edges: getEdges() }
-        const problems = validateGraph(graph)
-        if (problems.length > 0) {
-          toast.error(problems[0])
-          return
-        }
-
-        startTransition(async () => {
-          try {
-            await runWorkflowAction(workflowId)
-          } catch (error) {
-            toast.error("Failed to start workflow run")
-          }
-        })
-      }}
-    >
-      <Play fill="primary" />
-      Run
-    </Button>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// The sidebar itself — header on top, then the Toolbar / Editor tabs.
+// The sidebar itself — Toolbar / Editor tabs.
 // ---------------------------------------------------------------------------
 
 interface RightSidebarProps {
-  workflowId: string
+  workflowId?: string
 }
 
 export function RightSidebar({ workflowId: _workflowId }: RightSidebarProps) {
@@ -448,7 +320,6 @@ export function RightSidebar({ workflowId: _workflowId }: RightSidebarProps) {
   // Read the selected node from the shared React Flow store.
   const selected = useStore((s) => s.nodes.find((n) => n.selected)) as StepNodeType | undefined
 
-  // TODO: auto-switch to the Editor tab when the selection changes.
   const [prevSelectedId, setPrevSelectedId] = useState(selected?.id)
   if (selected && selected.id !== prevSelectedId) {
     setPrevSelectedId(selected.id)
@@ -457,43 +328,27 @@ export function RightSidebar({ workflowId: _workflowId }: RightSidebarProps) {
 
   return (
     <div className="flex h-full w-full flex-col bg-background">
-      <Tabs value={tab} onValueChange={setTab} className="size-full gap-0">
-        <div className="flex items-center justify-between border-b border-border p-2">
-          <div className="flex items-center gap-1">
-            <ActionsMenu workflowId={_workflowId} />
-            <HowItWorksDialog
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="size-8 text-muted-foreground hover:text-foreground"
-                  title="Workflow Guide & Documentation"
-                >
-                  <BookOpen className="size-4" />
-                </Button>
-              }
-            />
-          </div>
-          <RunButton workflowId={_workflowId} />
+      <Tabs value={tab} onValueChange={setTab} className="size-full flex flex-col gap-0">
+        <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3 bg-card/40">
+          <TabsList className="h-7.5 bg-muted/60 p-0.5 w-full grid grid-cols-2">
+            <TabsTrigger
+              value="toolbar"
+              className="h-6.5 text-xs font-medium rounded-sm data-active:bg-background data-active:text-foreground data-active:shadow-xs"
+            >
+              Toolbar
+            </TabsTrigger>
+            <TabsTrigger
+              value="editor"
+              className="h-6.5 text-xs font-medium rounded-sm data-active:bg-background data-active:text-foreground data-active:shadow-xs"
+            >
+              Editor {selected ? `• ${selected.data.title || selected.data.type}` : ""}
+            </TabsTrigger>
+          </TabsList>
         </div>
-        <TabsList className="m-2 w-fit bg-background">
-          <TabsTrigger
-            value="toolbar"
-            className="flex-none rounded-sm data-active:bg-accent! data-active:text-accent-foreground! data-active:shadow-none! dark:data-active:border-transparent!"
-          >
-            Toolbar
-          </TabsTrigger>
-          <TabsTrigger
-            value="editor"
-            className="flex-none rounded-sm data-active:bg-accent! data-active:text-accent-foreground! data-active:shadow-none! dark:data-active:border-transparent!"
-          >
-            Editor
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="toolbar" className="flex min-h-0 flex-col">
+        <TabsContent value="toolbar" className="flex flex-1 min-h-0 flex-col overflow-y-auto m-0 p-0">
           <Palette />
         </TabsContent>
-        <TabsContent value="editor" className="flex min-h-0 flex-col">
+        <TabsContent value="editor" className="flex flex-1 min-h-0 flex-col overflow-y-auto m-0 p-0">
           <Inspector node={selected} />
         </TabsContent>
       </Tabs>

@@ -40,10 +40,20 @@ export async function getWorkflow(orgId: string, id: string) {
     return workflow ?? null
 }
 
-export async function createWorkflow(orgId: string, name: string) {
+export async function createWorkflow(orgId: string, name: string, graph?: WorkflowGraph) {
     const [workflow] = await db
         .insert(workflows)
-        .values({ orgId, name })
+        .values({ orgId, name, ...(graph ? { graph } : {}) })
+        .returning()
+
+    return workflow
+}
+
+export async function updateWorkflowName({ orgId, id, name }: { orgId: string; id: string; name: string }) {
+    const [workflow] = await db
+        .update(workflows)
+        .set({ name: name.trim(), updatedAt: new Date() })
+        .where(and(eq(workflows.id, id), eq(workflows.orgId, orgId)))
         .returning()
 
     return workflow
@@ -54,3 +64,4 @@ export async function deleteWorkflow(orgId: string, id: string) {
         .delete(workflows)
         .where(and(eq(workflows.id, id), eq(workflows.orgId, orgId)))
 }
+

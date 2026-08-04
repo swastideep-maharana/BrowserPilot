@@ -6,7 +6,7 @@ import { runs } from "@trigger.dev/sdk"
 import { auth as triggerAuth, tasks } from "@trigger.dev/sdk"
 import type { runWorkflowTask } from "@/features/workflows/tasks/run-workflow"
 
-import { createWorkflow, deleteWorkflow, saveWorkflowGraph } from "@/features/workflows/data"
+import { createWorkflow, deleteWorkflow, saveWorkflowGraph, updateWorkflowName } from "@/features/workflows/data"
 import { liveblocks } from "@/lib/liveblocks"
 import type { WorkflowGraph } from "@/lib/db/schema"
 
@@ -14,7 +14,10 @@ export type CreateWorkflowResult =
   | { success: true; workflowId: string }
   | { success: false; error: string; redirectTo?: string }
 
-export async function createWorkflowAction(name: string): Promise<CreateWorkflowResult> {
+export async function createWorkflowAction(
+  name: string,
+  initialGraph?: WorkflowGraph
+): Promise<CreateWorkflowResult> {
   const { orgId, has } = await auth()
 
   if (!orgId) {
@@ -43,8 +46,9 @@ export async function createWorkflowAction(name: string): Promise<CreateWorkflow
   }
 
   try {
-    const workflow = await createWorkflow(orgId, name)
+    const workflow = await createWorkflow(orgId, name, initialGraph)
     revalidatePath("/", "layout")
+    revalidatePath("/workflows", "page")
     return { success: true, workflowId: workflow.id }
   } catch (err: any) {
     console.error("Error creating workflow:", err)
@@ -52,6 +56,40 @@ export async function createWorkflowAction(name: string): Promise<CreateWorkflow
       success: false,
       error: err?.message || "Failed to create workflow in database",
     }
+  }
+}
+
+export async function renameWorkflowAction(
+  workflowId: string,
+  name: string
+): Promise<{ success: boolean; error?: string }> {
+  const { orgId } = await auth()
+
+  if (!orgId) {
+    return { success: false, error: "No active organization" }
+  }
+
+  const trimmed = name.trim()
+  if (!trimmed) {
+    return { success: false, error: "Workflow name cannot be empty" }
+  }
+
+  try {
+    await updateWorkflowName({ orgId, id: workflowId, name: trimmed })
+    try {
+      await liveblocks.updateRoom(workflowId, {
+        metadata: { title: trimmed },
+      })
+    } catch {
+      // Non-fatal if room doesn't exist yet
+    }
+    revalidatePath("/", "layout")
+    revalidatePath("/workflows", "page")
+    revalidatePath(`/workflows/${workflowId}`, "page")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to rename workflow:", err)
+    return { success: false, error: err?.message || "Failed to rename workflow" }
   }
 }
 

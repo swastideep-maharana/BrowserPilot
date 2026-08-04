@@ -1,24 +1,22 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
+import Link from "next/link"
 import {
   Workflow,
   Plus,
   BookOpen,
   Sparkles,
-  Bot,
-  Video,
   Layers,
   ArrowRight,
   ShieldCheck,
+  Video,
+  Bot,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner"
-import { createWorkflowAction } from "@/features/workflows/actions"
-import { generateSlug } from "@/features/workflows/lib/generate-slug"
+import { useCreateWorkflow } from "@/features/workflows/hooks/use-create-workflow"
 import { useProPlan } from "@/features/workflows/hooks/use-pro-plan"
 import { HowItWorksDialog } from "@/features/workflows/components/how-it-works-dialog"
 import {
@@ -26,38 +24,14 @@ import {
   type WorkflowTemplate,
 } from "@/features/workflows/components/template-cards"
 
-export default function Page() {
-  const [isPending, startTransition] = useTransition()
-  const router = useRouter()
-  const { isPro, redirectToPricing } = useProPlan()
+export default function DashboardPage() {
+  const { createWorkflow, isPending } = useCreateWorkflow()
+  const { isPro } = useProPlan()
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideTab, setGuideTab] = useState("get-started")
 
-  function handleCreate(name?: string) {
-    if (!isPro) {
-      redirectToPricing()
-      return
-    }
-
-    startTransition(async () => {
-      try {
-        const res = await createWorkflowAction(name || generateSlug())
-        if (res?.success) {
-          router.push(`/workflows/${res.workflowId}`)
-        } else if (res?.redirectTo) {
-          router.push(res.redirectTo)
-        } else if (res && !res.success) {
-          toast.error(res.error || "Failed to create workflow")
-        }
-      } catch (error) {
-        console.error("Error creating workflow:", error)
-        toast.error("Failed to create workflow")
-      }
-    })
-  }
-
   function handleSelectTemplate(tmpl: WorkflowTemplate) {
-    handleCreate(`${tmpl.id}-${generateSlug().slice(0, 6)}`)
+    createWorkflow({ template: tmpl })
   }
 
   function handleOpenGuide(tab: string = "get-started") {
@@ -81,7 +55,10 @@ export default function Page() {
                   <span>AI-Powered Browser Automation</span>
                 </Badge>
                 {isPro && (
-                  <Badge variant="outline" className="text-[11px] gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5"
+                  >
                     <ShieldCheck className="size-3" />
                     <span>Pro Active</span>
                   </Badge>
@@ -89,10 +66,11 @@ export default function Page() {
               </div>
 
               <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
-                Automate Any Web Task with Stagehand AI
+                Automate Any Web Task with BrowserPilot
               </h1>
               <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
-                Build visual workflows that navigate websites, extract structured data, click and type with natural language, and run autonomous browser agents in cloud sessions.
+                Build visual workflows that navigate websites, extract structured data, click and
+                type with natural language, and run autonomous browser agents in cloud sessions.
               </p>
             </div>
 
@@ -101,7 +79,7 @@ export default function Page() {
                 size="lg"
                 className="gap-2 px-6 text-sm font-semibold rounded-xl shadow-xs"
                 disabled={isPending}
-                onClick={() => handleCreate()}
+                onClick={() => createWorkflow()}
               >
                 <Plus className="size-4" />
                 <span>{isPending ? "Creating…" : "New Workflow"}</span>
@@ -111,10 +89,12 @@ export default function Page() {
                 size="lg"
                 variant="outline"
                 className="gap-2 px-5 text-sm font-medium rounded-xl"
-                onClick={() => handleOpenGuide("get-started")}
+                asChild
               >
-                <BookOpen className="size-4 text-primary" />
-                <span>How It Works</span>
+                <Link href="/guide">
+                  <BookOpen className="size-4 text-primary" />
+                  <span>Guide & Docs</span>
+                </Link>
               </Button>
             </div>
           </div>
@@ -124,11 +104,11 @@ export default function Page() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-heading text-lg font-semibold tracking-tight">
+              <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
                 Starter Workflow Blueprints
               </h2>
               <p className="text-xs text-muted-foreground">
-                Click any template to quickly create a pre-configured automation flow.
+                Click any template to quickly create a pre-configured automation flow with connected nodes.
               </p>
             </div>
 
@@ -136,10 +116,12 @@ export default function Page() {
               variant="ghost"
               size="sm"
               className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => handleOpenGuide("recipes")}
+              asChild
             >
-              <span>Explore all recipes</span>
-              <ArrowRight className="size-3" />
+              <Link href="/guide?tab=recipes">
+                <span>Explore all blueprints</span>
+                <ArrowRight className="size-3" />
+              </Link>
             </Button>
           </div>
 
@@ -151,59 +133,81 @@ export default function Page() {
 
         {/* ── CORE CAPABILITIES HIGHLIGHTS ───────────────────────── */}
         <div className="space-y-4">
-          <div>
-            <h2 className="font-heading text-lg font-semibold tracking-tight">
-              Platform Features & Architecture
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Everything under the hood designed for speed, resilience, and visibility.
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
+                Platform Architecture & Quick Links
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Everything under the hood designed for speed, resilience, and visibility.
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-primary hover:text-primary"
+              asChild
+            >
+              <Link href="/workflows">
+                <span>All Workflows</span>
+                <ArrowRight className="size-3" />
+              </Link>
+            </Button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div
-              className="cursor-pointer rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/40 hover:bg-card"
-              onClick={() => handleOpenGuide("nodes")}
+            <Link
+              href="/guide?tab=nodes"
+              className="rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/40 hover:bg-card group"
             >
               <div className="flex size-9 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
                 <Sparkles className="size-5" />
               </div>
-              <h3 className="mt-3 font-semibold text-sm">Natural Language Actions</h3>
+              <h3 className="mt-3 font-semibold text-sm group-hover:text-primary transition-colors text-foreground">
+                Natural Language Actions
+              </h3>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Use <code>Act</code> and <code>Extract</code> with natural language prompts without maintaining fragile XPath or CSS selectors.
+                Use <code>Act</code> and <code>Extract</code> with natural language prompts without
+                maintaining fragile XPath or CSS selectors.
               </p>
-            </div>
+            </Link>
 
-            <div
-              className="cursor-pointer rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/40 hover:bg-card"
-              onClick={() => handleOpenGuide("observability")}
+            <Link
+              href="/guide?tab=observability"
+              className="rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/40 hover:bg-card group"
             >
               <div className="flex size-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
                 <Video className="size-5" />
               </div>
-              <h3 className="mt-3 font-semibold text-sm">Browserbase Video Replay</h3>
+              <h3 className="mt-3 font-semibold text-sm group-hover:text-primary transition-colors text-foreground">
+                Browserbase Video Replay
+              </h3>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Review full HLS video recordings of cloud browser sessions directly inside your workflow console.
+                Review full HLS video recordings of cloud browser sessions directly inside your
+                workflow console.
               </p>
-            </div>
+            </Link>
 
-            <div
-              className="cursor-pointer rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/40 hover:bg-card"
-              onClick={() => handleOpenGuide("get-started")}
+            <Link
+              href="/workflows"
+              className="rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/40 hover:bg-card group"
             >
               <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
                 <Layers className="size-5" />
               </div>
-              <h3 className="mt-3 font-semibold text-sm">Live Multiplayer Sync</h3>
+              <h3 className="mt-3 font-semibold text-sm group-hover:text-primary transition-colors text-foreground">
+                Workflows Management Hub
+              </h3>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Collaborate in real time with organization teammates using Liveblocks room state synchronization.
+                Search, filter, manage, rename, and monitor all organization browser automation pipelines.
               </p>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Interactive Guide Dialog */}
+      {/* Interactive Quick Guide Dialog */}
       <HowItWorksDialog
         open={guideOpen}
         onOpenChange={setGuideOpen}
@@ -212,5 +216,3 @@ export default function Page() {
     </div>
   )
 }
-
-

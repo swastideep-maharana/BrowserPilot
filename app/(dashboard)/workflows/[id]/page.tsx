@@ -8,6 +8,8 @@ import { Room } from "@/features/workflows/components/room"
 import { WorkflowShell } from "@/features/workflows/components/workflow-shell"
 import { WorkflowRunsProvider } from "@/features/workflows/components/workflow-runs-provider"
 
+import type { WorkflowGraph } from "@/lib/db/schema"
+
 interface WorkflowPageProps {
   params: Promise<{ id: string }>
 }
@@ -59,7 +61,11 @@ export default async function WorkflowPage({ params }: WorkflowPageProps) {
   return (
     <Room roomId={id}>
       <WorkflowRunsProvider workflowId={id} publicAccessToken={publicAccessToken}>
-        <WorkflowShell workflowId={id} />
+        <WorkflowShell
+          workflowId={id}
+          workflowName={workflow.name}
+          initialGraph={workflow.graph as WorkflowGraph | null}
+        />
       </WorkflowRunsProvider>
     </Room>
   )
